@@ -1,6 +1,8 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import ImageIO
+import UniformTypeIdentifiers
 
 /// Creates a new relationship, or edits an existing one. Changes only apply on Save.
 struct PersonEditorView: View {
@@ -22,6 +24,8 @@ struct PersonEditorView: View {
     @State private var notes: String
     @State private var photoData: Data?
     @State private var photoItem: PhotosPickerItem?
+    @State private var isLoadingPhoto = false
+    @State private var photoError: String?
     @State private var keyDates: [KeyDateDraft]
 
     init(person: Person? = nil) {
@@ -40,9 +44,22 @@ struct PersonEditorView: View {
                 Section {
                     VStack(spacing: 12) {
                         AvatarView(photoData: photoData, initials: draftInitials, size: 112)
+                            .opacity(isLoadingPhoto ? 0.4 : 1)
+                            .overlay {
+                                if isLoadingPhoto {
+                                    ProgressView()
+                                }
+                            }
                         HStack(spacing: 20) {
-                            PhotosPicker(photoData == nil ? "Add Photo" : "Change Photo", selection: $photoItem, matching: .images)
-                                .foregroundStyle(Theme.plum)
+                            // `.current` hands over the photo as stored. The default asks
+                            // Photos to convert it first, which is one more step that can fail.
+                            PhotosPicker(
+                                photoData == nil ? "Add Photo" : "Change Photo",
+                                selection: $photoItem,
+                                matching: .images,
+                                preferredItemEncoding: .current
+                            )
+                            .foregroundStyle(Theme.plum)
                             if photoData != nil {
                                 Button("Remove", role: .destructive) {
                                     photoData = nil
@@ -144,11 +161,12 @@ struct PersonEditorView: View {
             }
             .onChange(of: photoItem) {
                 guard let photoItem else { return }
-                Task {
-                    if let data = try? await photoItem.loadTransferable(type: Data.self) {
-                        photoData = Self.downscaled(data)
-                    }
-                }
+                Task { await loadPhoto(from: photoItem) }
+            }
+            .alert("Couldn’t Add Photo", isPresented: Binding(get: { photoError != nil }, set: { if !$0 { photoError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(photoError ?? "")
             }
         }
     }
@@ -213,12 +231,48 @@ struct PersonEditorView: View {
         dismiss()
     }
 
+    /// Fetches the picked photo and keeps a small copy. A photo stored in
+    /// iCloud has to download first, so this can take a moment or fail; either
+    /// way the user is told, rather than nothing appearing to happen.
+    private func loadPhoto(from item: PhotosPickerItem) async {
+        isLoadingPhoto = true
+        defer { isLoadingPhoto = false }
+        do {
+            guard let picked = try await item.loadTransferable(type: PickedPhoto.self) else {
+                photoError = "Photos didn’t provide that picture. If it’s stored in iCloud, check your connection and try again."
+                return
+            }
+            guard let small = Self.downscaled(picked.data) else {
+                photoError = "That picture is in a format Relatery can’t read."
+                return
+            }
+            photoData = small
+        } catch {
+            photoError = "\(error.localizedDescription)\n\nIf the picture is stored in iCloud, check your connection and try again."
+        }
+    }
+
     /// Profile photos are only shown small, so keep the stored image light.
-    private static func downscaled(_ data: Data, maxDimension: CGFloat = 600) -> Data {
-        guard let image = UIImage(data: data) else { return data }
-        let scale = min(1, maxDimension / max(image.size.width, image.size.height))
-        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-        return image.preparingThumbnail(of: size)?.jpegData(compressionQuality: 0.8) ?? data
+    /// ImageIO makes the small copy without first decoding the full picture,
+    /// which matters for a 48-megapixel original.
+    private static func downscaled(_ data: Data, maxDimension: CGFloat = 600) -> Data? {
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxDimension,
+        ]
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return UIImage(cgImage: thumbnail).jpegData(compressionQuality: 0.8)
+    }
+}
+
+/// The picked photo's bytes, whatever image format it is stored in.
+private struct PickedPhoto: Transferable {
+    let data: Data
+
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(importedContentType: .image) { PickedPhoto(data: $0) }
     }
 }
 

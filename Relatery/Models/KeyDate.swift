@@ -98,9 +98,13 @@ final class KeyDate {
 
     /// "Turns 30" / "10 years" for the next occurrence, when the original year is known.
     var milestoneText: String? {
+        milestoneText(on: nextOccurrence())
+    }
+
+    /// The same, for a given occurrence of this day.
+    func milestoneText(on occurrence: Date, calendar: Calendar = .current) -> String? {
         guard let year else { return nil }
-        let nextYear = Calendar.current.component(.year, from: nextOccurrence())
-        let count = nextYear - year
+        let count = calendar.component(.year, from: occurrence) - year
         guard count > 0 else { return nil }
         switch kind {
         case .birthday: return "Turns \(count)"

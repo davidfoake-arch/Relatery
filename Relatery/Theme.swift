@@ -36,6 +36,25 @@ enum Theme {
     /// Destructive actions.
     static let berry = Color(hex: 0x8C3A4A)
 
+    // MARK: - UIKit appearance
+
+    /// The tab bar is still drawn by UIKit underneath, and SwiftUI has no
+    /// modifier for its label font. UIKit's "appearance proxy" sets a default
+    /// for every control created afterwards, so this is called once, when the
+    /// app starts. The font is scaled for the user's text size at that point.
+    static func applyUIKitAppearance() {
+        let base = UIFont(name: FontName.karlaSemiBold, size: 10) ?? .systemFont(ofSize: 10)
+        let tabLabel = UIFontMetrics(forTextStyle: .caption2).scaledFont(for: base)
+        let tabs = UITabBarAppearance()
+        tabs.configureWithDefaultBackground()
+        for layout in [tabs.stackedLayoutAppearance, tabs.inlineLayoutAppearance, tabs.compactInlineLayoutAppearance] {
+            layout.normal.titleTextAttributes = [.font: tabLabel]
+            layout.selected.titleTextAttributes = [.font: tabLabel]
+        }
+        UITabBar.appearance().standardAppearance = tabs
+        UITabBar.appearance().scrollEdgeAppearance = tabs
+    }
+
     // MARK: - Type scale
 
     /// The fonts' PostScript names, which are what `Font.custom` needs —
