@@ -293,7 +293,14 @@ private struct KeyDateEditor: View {
             TextField("Name (e.g. Graduation)", text: $draft.label)
         }
         if draft.includesYear {
-            DatePicker("Date", selection: $draft.date, displayedComponents: .date)
+            // A date of birth can't be in the future; other dates can (an
+            // upcoming wedding, say).
+            DatePicker(
+                isBirthday ? "Date of Birth" : "Date",
+                selection: $draft.date,
+                in: Date.distantPast...(isBirthday ? Date.now : Date.distantFuture),
+                displayedComponents: .date
+            )
         } else {
             HStack {
                 Text("Date")
@@ -315,11 +322,25 @@ private struct KeyDateEditor: View {
                 draft.day = min(draft.day, draft.daysInMonth)
             }
         }
-        Toggle("Include Year", isOn: $draft.includesYear)
+        Toggle(isBirthday ? "Include Year of Birth" : "Include Year", isOn: $draft.includesYear)
             .tint(Theme.plum)
             .onChange(of: draft.includesYear) {
                 draft.day = min(draft.day, draft.daysInMonth)
+                keepBirthdayInPast()
             }
+            .onChange(of: draft.kind) {
+                keepBirthdayInPast()
+            }
+    }
+
+    private var isBirthday: Bool { draft.kind == .birthday }
+
+    /// The year starts out as this year, so a birthday later in the year
+    /// would be a date of birth in the future. Step back to last year.
+    private func keepBirthdayInPast() {
+        if isBirthday && draft.includesYear && draft.date > .now {
+            draft.year -= 1
+        }
     }
 }
 
