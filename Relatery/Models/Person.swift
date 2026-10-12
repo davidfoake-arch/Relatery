@@ -1,11 +1,20 @@
 import Foundation
 import SwiftData
 
+/// The built-in relationship types offered in the editor. A relationship can
+/// also have a type the user typed themselves; both are stored as plain text
+/// in `Person.relationship`.
+enum RelationshipType {
+    static let presets = ["Spouse", "Partner", "Friend", "Parent", "Child", "Sibling", "Family", "Colleague"]
+}
+
+/// One entry in the app. The interface calls these "Relationships".
 @Model
 final class Person {
     var firstName: String = ""
     var lastName: String = ""
-    /// Free-form description of who they are to you, e.g. "Sister" or "College friend".
+    /// The type of relationship: one of `RelationshipType.presets`, a custom
+    /// type the user typed, or empty for none.
     var relationship: String = ""
     var notes: String = ""
     @Attribute(.externalStorage) var photoData: Data?

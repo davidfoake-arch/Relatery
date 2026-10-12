@@ -2,15 +2,23 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 
-/// Creates a new person, or edits an existing one. Changes only apply on Save.
+/// Creates a new relationship, or edits an existing one. Changes only apply on Save.
 struct PersonEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     private let person: Person?
+    /// Everyone, so custom types used elsewhere can be offered again.
+    @Query private var allPeople: [Person]
+
+    /// The picker's value for "Custom…", which reveals a text field. It can't
+    /// collide with a real type: those are trimmed, and this starts with a space.
+    private static let customTypeTag = " custom"
 
     @State private var firstName: String
     @State private var lastName: String
-    @State private var relationship: String
+    /// A relationship type, `customTypeTag`, or empty for none.
+    @State private var typeChoice: String
+    @State private var customType = ""
     @State private var notes: String
     @State private var photoData: Data?
     @State private var photoItem: PhotosPickerItem?
@@ -20,7 +28,7 @@ struct PersonEditorView: View {
         self.person = person
         _firstName = State(initialValue: person?.firstName ?? "")
         _lastName = State(initialValue: person?.lastName ?? "")
-        _relationship = State(initialValue: person?.relationship ?? "")
+        _typeChoice = State(initialValue: person?.relationship ?? "")
         _notes = State(initialValue: person?.notes ?? "")
         _photoData = State(initialValue: person?.photoData)
         _keyDates = State(initialValue: (person?.upcomingKeyDates ?? []).map { KeyDateDraft($0) })
@@ -55,14 +63,39 @@ struct PersonEditorView: View {
                         .textContentType(.givenName)
                     TextField("Last name", text: $lastName)
                         .textContentType(.familyName)
-                    TextField("Relationship (e.g. Sister, Friend)", text: $relationship)
                 }
                 .textInputAutocapitalization(.words)
                 .themedRows()
 
+                Section {
+                    Picker("Type", selection: $typeChoice) {
+                        Text("None").tag("")
+                        ForEach(RelationshipType.presets, id: \.self) { type in
+                            Text(type).tag(type)
+                        }
+                        if !customTypes.isEmpty {
+                            Section("Your Types") {
+                                ForEach(customTypes, id: \.self) { type in
+                                    Text(type).tag(type)
+                                }
+                            }
+                        }
+                        Section {
+                            Text("Custom…").tag(Self.customTypeTag)
+                        }
+                    }
+                    if typeChoice == Self.customTypeTag {
+                        TextField("Custom type (e.g. Godmother)", text: $customType)
+                            .textInputAutocapitalization(.words)
+                    }
+                } header: {
+                    Text("Relationship").themedSectionLabel()
+                }
+                .themedRows()
+
                 ForEach($keyDates) { $keyDate in
                     Section {
-                        KeyDateEditor(draft: $keyDate)
+                        KeyDateEditor(draft: $keyDate, availableKinds: availableKinds(keeping: keyDate.kind))
                         Button("Remove Date", role: .destructive) {
                             keyDates.removeAll { $0.id == keyDate.id }
                         }
@@ -77,7 +110,7 @@ struct PersonEditorView: View {
                             Button(kind.title, systemImage: kind.symbolName) {
                                 keyDates.append(KeyDateDraft(kind: kind))
                             }
-                            .disabled(kind == .birthday && keyDates.contains { $0.kind == .birthday })
+                            .disabled(!availableKinds(keeping: nil).contains(kind))
                         }
                     } label: {
                         Label("Add Date", systemImage: "plus.circle.fill")
@@ -99,7 +132,7 @@ struct PersonEditorView: View {
             .tint(Theme.plum)
             .themedListBackground()
             .scrollDismissesKeyboard(.interactively)
-            .themedNavigationBar(title: person == nil ? "New Person" : "Edit Person")
+            .themedNavigationBar(title: person == nil ? "New Relationship" : "Edit Relationship")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -124,6 +157,29 @@ struct PersonEditorView: View {
         !(firstName + lastName).trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    /// Types the user has typed before, on this relationship or any other.
+    private var customTypes: [String] {
+        var types = Set(allPeople.map(\.relationship))
+        if typeChoice != Self.customTypeTag {
+            types.insert(typeChoice)
+        }
+        return types
+            .filter { !$0.isEmpty && !RelationshipType.presets.contains($0) }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
+    private var chosenType: String {
+        typeChoice == Self.customTypeTag ? customType.trimmingCharacters(in: .whitespaces) : typeChoice
+    }
+
+    /// The kinds a date can still be: every kind not already used by another
+    /// date, plus `current`, the kind of the date being edited.
+    private func availableKinds(keeping current: KeyDateKind?) -> [KeyDateKind] {
+        KeyDateKind.allCases.filter { kind in
+            kind.allowsMultiple || kind == current || !keyDates.contains { $0.kind == kind }
+        }
+    }
+
     private var draftInitials: String {
         String([firstName, lastName].compactMap { $0.trimmingCharacters(in: .whitespaces).first }).uppercased()
     }
@@ -135,7 +191,7 @@ struct PersonEditorView: View {
         }
         target.firstName = firstName.trimmingCharacters(in: .whitespaces)
         target.lastName = lastName.trimmingCharacters(in: .whitespaces)
-        target.relationship = relationship.trimmingCharacters(in: .whitespaces)
+        target.relationship = chosenType
         target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         target.photoData = photoData
 
@@ -216,7 +272,7 @@ struct KeyDateDraft: Identifiable {
 
     func apply(to keyDate: KeyDate) {
         keyDate.kind = kind
-        keyDate.label = label.trimmingCharacters(in: .whitespaces)
+        keyDate.label = kind == .custom ? label.trimmingCharacters(in: .whitespaces) : ""
         keyDate.month = month
         keyDate.day = min(day, daysInMonth)
         keyDate.year = includesYear ? year : nil
@@ -225,15 +281,16 @@ struct KeyDateDraft: Identifiable {
 
 private struct KeyDateEditor: View {
     @Binding var draft: KeyDateDraft
+    let availableKinds: [KeyDateKind]
 
     var body: some View {
         Picker("Type", selection: $draft.kind) {
-            ForEach(KeyDateKind.allCases) { kind in
+            ForEach(availableKinds) { kind in
                 Label(kind.title, systemImage: kind.symbolName).tag(kind)
             }
         }
-        if draft.kind != .birthday {
-            TextField(draft.kind == .custom ? "Name (e.g. Graduation)" : "Name (optional)", text: $draft.label)
+        if draft.kind == .custom {
+            TextField("Name (e.g. Graduation)", text: $draft.label)
         }
         if draft.includesYear {
             DatePicker("Date", selection: $draft.date, displayedComponents: .date)

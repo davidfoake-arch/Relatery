@@ -3,7 +3,10 @@ import SwiftData
 
 enum KeyDateKind: String, Codable, CaseIterable, Identifiable {
     case birthday
-    case anniversary
+    // Stored as "anniversary", the name this kind had before the two
+    // anniversaries were told apart.
+    case weddingAnniversary = "anniversary"
+    case datingAnniversary
     case custom
 
     var id: String { rawValue }
@@ -11,7 +14,8 @@ enum KeyDateKind: String, Codable, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .birthday: "Birthday"
-        case .anniversary: "Anniversary"
+        case .weddingAnniversary: "Wedding Anniversary"
+        case .datingAnniversary: "Dating Anniversary"
         case .custom: "Special Day"
         }
     }
@@ -19,17 +23,22 @@ enum KeyDateKind: String, Codable, CaseIterable, Identifiable {
     var symbolName: String {
         switch self {
         case .birthday: "birthday.cake.fill"
-        case .anniversary: "heart.fill"
+        case .weddingAnniversary: "heart.circle.fill"
+        case .datingAnniversary: "heart.fill"
         case .custom: "star.fill"
         }
     }
+
+    /// A relationship has at most one of each kind, except custom days,
+    /// which the user names and can add as many of as they like.
+    var allowsMultiple: Bool { self == .custom }
 }
 
 /// A day that recurs every year. The year is optional, like birthdays in Contacts.
 @Model
 final class KeyDate {
     var kind: KeyDateKind = KeyDateKind.custom
-    /// User-provided name, used for custom days (and optionally to qualify an anniversary).
+    /// User-provided name, used for custom days only.
     var label: String = ""
     var month: Int = 1
     var day: Int = 1
@@ -95,7 +104,7 @@ final class KeyDate {
         guard count > 0 else { return nil }
         switch kind {
         case .birthday: return "Turns \(count)"
-        case .anniversary, .custom: return count == 1 ? "1 year" : "\(count) years"
+        case .weddingAnniversary, .datingAnniversary, .custom: return count == 1 ? "1 year" : "\(count) years"
         }
     }
 

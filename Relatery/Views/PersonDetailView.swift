@@ -54,7 +54,7 @@ struct PersonDetailView: View {
             Section {
                 // The dialog is attached to the button that opens it: it is
                 // drawn as a popover pointing at whatever view it's attached to.
-                Button("Delete Person", role: .destructive) {
+                Button("Delete Relationship", role: .destructive) {
                     isConfirmingDelete = true
                 }
                 .foregroundStyle(Theme.berry)
@@ -64,7 +64,7 @@ struct PersonDetailView: View {
                         dismiss()
                     }
                 } message: {
-                    Text("Their profile and key dates will be removed.")
+                    Text("This relationship and its key dates will be removed.")
                 }
             }
             .themedRows()

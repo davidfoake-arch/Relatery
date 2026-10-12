@@ -32,7 +32,7 @@ struct PeopleListView: View {
             .overlay {
                 if people.isEmpty {
                     ContentUnavailableView {
-                        Label("No People Yet", systemImage: "person.2")
+                        Label("No Relationships Yet", systemImage: "person.2")
                             .font(Theme.Fonts.cardHeading)
                             .foregroundStyle(Theme.darkBrown)
                     } description: {
@@ -40,7 +40,7 @@ struct PeopleListView: View {
                             .font(Theme.Fonts.secondary)
                             .foregroundStyle(Theme.mutedBrown)
                     } actions: {
-                        Button("Add Person") { isAddingPerson = true }
+                        Button("Add Relationship") { isAddingPerson = true }
                             .font(Theme.Fonts.bodyStrong)
                             .buttonStyle(.borderedProminent)
                             .tint(Theme.clay)
@@ -49,14 +49,14 @@ struct PeopleListView: View {
                     ContentUnavailableView.search(text: searchText)
                 }
             }
-            .themedNavigationBar(title: "People")
+            .themedNavigationBar(title: "Relationships")
             .navigationDestination(for: Person.self) { person in
                 PersonDetailView(person: person)
             }
             .searchable(text: $searchText)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Add Person", systemImage: "plus") { isAddingPerson = true }
+                    Button("Add Relationship", systemImage: "plus") { isAddingPerson = true }
                 }
             }
             .sheet(isPresented: $isAddingPerson) {
