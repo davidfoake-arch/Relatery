@@ -20,6 +20,17 @@ enum KeyDateKind: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// `title` split in two for menus, which are too narrow for "Wedding
+    /// Anniversary" on one line and hyphenate it mid-word. Shown as a menu
+    /// item's title and subtitle.
+    var menuTitle: (title: String, subtitle: String?) {
+        switch self {
+        case .weddingAnniversary: ("Wedding", "Anniversary")
+        case .datingAnniversary: ("Dating", "Anniversary")
+        case .birthday, .custom: (title, nil)
+        }
+    }
+
     var symbolName: String {
         switch self {
         case .birthday: "birthday.cake.fill"

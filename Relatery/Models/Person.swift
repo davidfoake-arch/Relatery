@@ -5,7 +5,7 @@ import SwiftData
 /// also have a type the user typed themselves; both are stored as plain text
 /// in `Person.relationship`.
 enum RelationshipType {
-    static let presets = ["Spouse", "Partner", "Friend", "Parent", "Child", "Sibling", "Family", "Colleague"]
+    static let presets = ["Spouse", "Partner", "Friend", "Parent", "Child", "Sibling", "Family", "Colleague", "Pet"]
 }
 
 /// One entry in the app. The interface calls these "Relationships".

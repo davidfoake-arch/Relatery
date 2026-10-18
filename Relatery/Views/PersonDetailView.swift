@@ -70,7 +70,7 @@ struct PersonDetailView: View {
             .themedRows()
         }
         .themedListBackground()
-        .themedNavigationBar(title: "Profile")
+        .themedNavigationBar(title: person.displayName)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Edit") { isEditing = true }

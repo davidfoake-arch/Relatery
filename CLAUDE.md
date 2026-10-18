@@ -60,13 +60,8 @@ Smaller things noticed along the way:
 
 - Reminder settings apply to every date; no per-person or per-date
   override.
-- Turning on "Include Year of Birth" starts at the current year, so the
-  picker needs scrolling back to reach a birth year.
-- "Wedding Anniversary" wraps mid-word in the Add Date menu.
-- Delete/Remove buttons use `berry`, which is close to plum and stands out
-  less than it did against green.
-- The launch screen flashes white before the plum bar appears.
-- The profile screen is still titled "Profile".
+- The deployment target is still Xcode's default (iOS 17). Raising it
+  would allow newer SwiftUI APIs without `#available` checks.
 - Dark mode: the palette has no dark variants, which is why the app is
   locked to light.
 - If the GitHub repository is ever made public, check the licences of the

@@ -33,8 +33,9 @@ enum Theme {
     static let stone = Color(hex: 0xDFD5C3)
     /// Calls to action, and a date that is today.
     static let clay = Color(hex: 0xB5653F)
-    /// Destructive actions.
-    static let berry = Color(hex: 0x8C3A4A)
+    /// Destructive actions. A brick red rather than Cairnward's berry
+    /// (0x8C3A4A), which was too close to plum to stand out.
+    static let berry = Color(hex: 0xB3302B)
 
     // MARK: - UIKit appearance
 

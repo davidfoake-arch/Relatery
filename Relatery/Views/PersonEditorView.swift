@@ -124,8 +124,10 @@ struct PersonEditorView: View {
                 Section {
                     Menu {
                         ForEach(KeyDateKind.allCases) { kind in
-                            Button(kind.title, systemImage: kind.symbolName) {
+                            Button {
                                 keyDates.append(KeyDateDraft(kind: kind))
+                            } label: {
+                                KeyDateKindMenuLabel(kind: kind)
                             }
                             .disabled(!availableKinds(keeping: nil).contains(kind))
                         }
@@ -333,16 +335,54 @@ struct KeyDateDraft: Identifiable {
     }
 }
 
+/// A date kind as the label of a menu `Button`. The views have to be loose,
+/// not wrapped in a `Label`, for the second `Text` to become the item's
+/// subtitle; a Picker drops the subtitle whatever the form.
+private struct KeyDateKindMenuLabel: View {
+    let kind: KeyDateKind
+
+    var body: some View {
+        Image(systemName: kind.symbolName)
+        Text(kind.menuTitle.title)
+        if let subtitle = kind.menuTitle.subtitle {
+            Text(subtitle)
+        }
+    }
+}
+
 private struct KeyDateEditor: View {
     @Binding var draft: KeyDateDraft
     let availableKinds: [KeyDateKind]
 
     var body: some View {
-        Picker("Type", selection: $draft.kind) {
+        // A menu rather than a Picker: picker menus drop subtitles, which
+        // `KeyDateKindMenuLabel` needs. Drawn to look like a picker row.
+        Menu {
             ForEach(availableKinds) { kind in
-                Label(kind.title, systemImage: kind.symbolName).tag(kind)
+                Button {
+                    draft.kind = kind
+                } label: {
+                    KeyDateKindMenuLabel(kind: kind)
+                }
+                .disabled(kind == draft.kind)
+            }
+        } label: {
+            HStack {
+                Text("Type")
+                    .foregroundStyle(Theme.darkBrown)
+                Spacer()
+                // Not a Label: in a list row that adds a wide gap after the
+                // icon and moves the row separator to start under the title.
+                HStack(spacing: 6) {
+                    Image(systemName: draft.kind.symbolName)
+                    Text(draft.kind.title)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(Theme.Fonts.footnote)
+                }
+                .foregroundStyle(Theme.plum)
             }
         }
+        .accessibilityLabel("Type, \(draft.kind.title)")
         if draft.kind == .custom {
             TextField("Name (e.g. Graduation)", text: $draft.label)
         }
@@ -379,6 +419,7 @@ private struct KeyDateEditor: View {
         Toggle(isBirthday ? "Include Year of Birth" : "Include Year", isOn: $draft.includesYear)
             .tint(Theme.plum)
             .onChange(of: draft.includesYear) {
+                startBirthYearAtAdult()
                 draft.day = min(draft.day, draft.daysInMonth)
                 keepBirthdayInPast()
             }
@@ -388,6 +429,16 @@ private struct KeyDateEditor: View {
     }
 
     private var isBirthday: Bool { draft.kind == .birthday }
+
+    /// A birthday with no year yet starts out on this year, which would mean
+    /// scrolling back decades to reach a birth year. Start 30 years back
+    /// instead, so most are a short scroll either way.
+    private func startBirthYearAtAdult() {
+        let thisYear = Calendar.current.component(.year, from: .now)
+        if isBirthday && draft.includesYear && draft.year >= thisYear {
+            draft.year = thisYear - 30
+        }
+    }
 
     /// The year starts out as this year, so a birthday later in the year
     /// would be a date of birth in the future. Step back to last year.
