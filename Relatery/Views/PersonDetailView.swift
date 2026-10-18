@@ -42,6 +42,24 @@ struct PersonDetailView: View {
             }
             .themedRows()
 
+            Section {
+                NavigationLink {
+                    ReminderPlanView(person: person)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: hasOwnReminders ? "bell.badge.fill" : "bell")
+                            .foregroundStyle(Theme.plum)
+                            .frame(width: 28)
+                        Text("Reminders")
+                        Spacer()
+                        Text(hasOwnReminders ? "Custom" : "Everyday")
+                            .font(Theme.Fonts.secondary)
+                            .foregroundStyle(Theme.mutedBrown)
+                    }
+                }
+            }
+            .themedRows()
+
             if !person.notes.isEmpty {
                 Section {
                     Text(person.notes)
@@ -79,6 +97,11 @@ struct PersonDetailView: View {
         .sheet(isPresented: $isEditing) {
             PersonEditorView(person: person)
         }
+    }
+
+    /// A plan of their own, or one on any of their dates.
+    private var hasOwnReminders: Bool {
+        person.reminderPlan != nil || person.keyDates.contains { $0.reminderPlan != nil }
     }
 }
 

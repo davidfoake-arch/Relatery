@@ -45,7 +45,12 @@ struct ContentView: View {
         let settings = "\(remindersEnabled)|\(remindsOnDay)|\(advanceDays)|\(minutesAfterMidnight)"
         let state = "\(scenePhase)|\(scheduler.authorization.rawValue)"
         let dates = keyDates
-            .map { "\($0.person?.displayName ?? "")|\($0.title)|\($0.month)|\($0.day)|\($0.year ?? 0)" }
+            .map { keyDate in
+                let plans = [keyDate.reminderPlanData, keyDate.person?.reminderPlanData]
+                    .map { $0?.base64EncodedString() ?? "-" }
+                    .joined(separator: "|")
+                return "\(keyDate.person?.displayName ?? "")|\(keyDate.title)|\(keyDate.month)|\(keyDate.day)|\(keyDate.year ?? 0)|\(plans)"
+            }
             .sorted()
         return [settings, state] + dates
     }

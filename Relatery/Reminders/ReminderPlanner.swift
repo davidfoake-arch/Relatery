@@ -1,10 +1,27 @@
 import Foundation
 
-/// One notification to deliver: who and what it is about, and when.
+/// One reminder to deliver: who and what it is about, when, and how.
 struct PlannedReminder: Equatable {
+    enum Kind: Equatable {
+        /// A reminder from a rule.
+        case reminder
+        /// A repeat of one, because "I'm Ready" hasn't been tapped yet.
+        case followUp
+        /// The last reminder that fits in the queue, asking for the app to be
+        /// opened so the rest can be scheduled.
+        case safetyNet
+    }
+
     let title: String
     let body: String
     let fireDate: Date
+    var loudness: ReminderLoudness = .normal
+    var kind: Kind = .reminder
+    /// Which occurrence of which date this is about; "I'm Ready" marks it
+    /// as answered. Nil for the safety net.
+    var occurrenceKey: String?
+    /// Offers "I'm Ready" and "Remind Me in 1 Hour".
+    var asksForReady = false
 }
 
 /// Works out which reminders should be waiting to fire. It only decides —
@@ -13,12 +30,17 @@ struct PlannedReminder: Equatable {
 enum ReminderPlanner {
     /// iOS keeps at most 64 pending notifications per app and silently drops
     /// the rest, so only the soonest are scheduled. The plan is rebuilt every
-    /// time the app is opened, which tops the queue up again.
+    /// time the app is opened (and now and then in the background), which
+    /// tops the queue up again.
     static let limit = 60
+
+    /// How many times a "keep reminding" reminder comes back.
+    static let followUpCount = 3
 
     static func plan(
         for keyDates: [KeyDate],
         settings: ReminderSettings,
+        answered: Set<String> = [],
         now: Date = .now,
         calendar: Calendar = .current
     ) -> [PlannedReminder] {
@@ -26,40 +48,81 @@ enum ReminderPlanner {
         var reminders: [PlannedReminder] = []
         for keyDate in keyDates {
             guard let name = keyDate.person?.displayName else { continue }
-            for lead in settings.leadDays {
-                guard let (occurrence, fireDate) = nextFiring(of: keyDate, lead: lead, settings: settings, now: now, calendar: calendar) else { continue }
-                reminders.append(PlannedReminder(
-                    title: name,
-                    body: body(for: keyDate, occurrence: occurrence, lead: lead, calendar: calendar),
-                    fireDate: fireDate
-                ))
+            let rules = keyDate.reminderRules(settings: settings)
+            guard !rules.isEmpty else { continue }
+            // This occurrence and the one after: a reminder for this one may
+            // already have passed while one for the next is due sooner (a
+            // month-ahead reminder for a date that's next week, say).
+            let first = keyDate.nextOccurrence(after: now, calendar: calendar)
+            guard let dayAfterFirst = calendar.date(byAdding: .day, value: 1, to: first) else { continue }
+            let second = keyDate.nextOccurrence(after: dayAfterFirst, calendar: calendar)
+            for occurrence in [first, second] {
+                let key = occurrenceKey(keyDate, occurrence, calendar: calendar)
+                for rule in rules {
+                    reminders += self.reminders(
+                        for: rule, keyDate: keyDate, name: name, occurrence: occurrence,
+                        key: key, isAnswered: answered.contains(key), calendar: calendar
+                    )
+                }
             }
         }
-        return Array(reminders.sorted { $0.fireDate < $1.fireDate }.prefix(limit))
+        let upcoming = reminders.filter { $0.fireDate > now }.sorted { $0.fireDate < $1.fireDate }
+        guard upcoming.count > limit else { return upcoming }
+
+        // Too many to queue. Keep the soonest and make the last one ask for
+        // the app to be opened, so later reminders aren't lost unnoticed.
+        var kept = Array(upcoming.prefix(limit - 1))
+        let lastDate = kept.last?.fireDate ?? now
+        kept.append(PlannedReminder(
+            title: "Keep Your Reminders Coming",
+            body: "Open Relatery so it can schedule the reminders after this one.",
+            fireDate: lastDate.addingTimeInterval(60),
+            kind: .safetyNet
+        ))
+        return kept
     }
 
-    /// The first occurrence whose reminder, `lead` days ahead of it, is still
-    /// in the future. Usually that's the next occurrence; it's the one after
-    /// when this year's reminder time has already passed.
-    private static func nextFiring(
-        of keyDate: KeyDate,
-        lead: Int,
-        settings: ReminderSettings,
-        now: Date,
+    /// One rule's reminder for one occurrence, plus its follow-ups.
+    private static func reminders(
+        for rule: ReminderRule,
+        keyDate: KeyDate,
+        name: String,
+        occurrence: Date,
+        key: String,
+        isAnswered: Bool,
         calendar: Calendar
-    ) -> (occurrence: Date, fireDate: Date)? {
-        var searchFrom = now
-        for _ in 0..<3 {
-            let occurrence = keyDate.nextOccurrence(after: searchFrom, calendar: calendar)
-            if let day = calendar.date(byAdding: .day, value: -lead, to: occurrence),
-               let fireDate = calendar.date(byAdding: .minute, value: settings.minutesAfterMidnight, to: day),
-               fireDate > now {
-                return (occurrence, fireDate)
-            }
-            guard let dayAfter = calendar.date(byAdding: .day, value: 1, to: occurrence) else { return nil }
-            searchFrom = dayAfter
+    ) -> [PlannedReminder] {
+        guard let day = calendar.date(byAdding: .day, value: -rule.daysBefore, to: occurrence),
+              let fireDate = calendar.date(byAdding: .minute, value: rule.minutesAfterMidnight, to: day) else { return [] }
+        let body = body(for: keyDate, occurrence: occurrence, lead: rule.daysBefore, calendar: calendar)
+        let reminder = PlannedReminder(
+            title: name, body: body, fireDate: fireDate, loudness: rule.loudness,
+            occurrenceKey: key, asksForReady: rule.asksForReady && !isAnswered
+        )
+        guard reminder.asksForReady else { return [reminder] }
+
+        // Follow-ups: a day apart while there's time, two hours apart once
+        // the date is close. None after the date has begun (or, for an
+        // on-the-day reminder, after it's over).
+        let spacing: DateComponents = rule.daysBefore >= 2 ? DateComponents(day: 1) : DateComponents(hour: 2)
+        let cutoff = rule.daysBefore == 0 ? calendar.date(byAdding: .day, value: 1, to: occurrence) ?? occurrence : occurrence
+        var followUps: [PlannedReminder] = []
+        var date = fireDate
+        for _ in 0..<followUpCount {
+            guard let next = calendar.date(byAdding: spacing, to: date), next < cutoff else { break }
+            date = next
+            followUps.append(PlannedReminder(
+                title: name, body: body, fireDate: next, loudness: rule.loudness,
+                kind: .followUp, occurrenceKey: key, asksForReady: true
+            ))
         }
-        return nil
+        return [reminder] + followUps
+    }
+
+    /// "<date key>@2026-11-02": one occurrence of one date.
+    static func occurrenceKey(_ keyDate: KeyDate, _ occurrence: Date, calendar: Calendar = .current) -> String {
+        let parts = calendar.dateComponents([.year, .month, .day], from: occurrence)
+        return String(format: "%@@%04d-%02d-%02d", keyDate.reminderKey, parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 
     /// "Birthday today · Turns 36" / "Birthday in 1 week, on Monday 19 October · Turns 36".
@@ -73,6 +136,7 @@ enum ReminderPlanner {
         case 1: when = "tomorrow"
         case 7: when = "in 1 week, on \(occurrence.formatted(style))"
         case 14: when = "in 2 weeks, on \(occurrence.formatted(style))"
+        case 21: when = "in 3 weeks, on \(occurrence.formatted(style))"
         default: when = "in \(lead) days, on \(occurrence.formatted(style))"
         }
         var text = "\(keyDate.title) \(when)"

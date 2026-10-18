@@ -2,12 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.david.Relatery.refreshReminders</string>
+	</array>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Relatery rings an alarm for the reminders you set to Alarm, so the dates that matter most can’t slip by.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Fraunces_72pt-Regular.ttf</string>
 		<string>Fraunces_72pt-SemiBold.ttf</string>
 		<string>Karla-Regular.ttf</string>
 		<string>Karla-SemiBold.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import CryptoKit
 
 enum KeyDateKind: String, Codable, CaseIterable, Identifiable {
     case birthday
@@ -55,6 +56,9 @@ final class KeyDate {
     var day: Int = 1
     var year: Int?
     var person: Person?
+    /// This date's own reminders, replacing its relationship's. Nil to use
+    /// the relationship's (see `reminderPlan`).
+    var reminderPlanData: Data?
 
     init(kind: KeyDateKind, label: String = "", month: Int, day: Int, year: Int? = nil) {
         self.kind = kind
@@ -62,6 +66,24 @@ final class KeyDate {
         self.month = month
         self.day = day
         self.year = year
+    }
+
+    var reminderPlan: ReminderPlan? {
+        get { ReminderPlan.decode(reminderPlanData) }
+        set { reminderPlanData = ReminderPlan.encode(newValue) }
+    }
+
+    /// The reminders that apply to this date: its own plan, else its
+    /// relationship's, else the everyday settings.
+    func reminderRules(settings: ReminderSettings) -> [ReminderRule] {
+        (reminderPlan ?? person?.reminderPlan)?.rules ?? settings.defaultRules
+    }
+
+    /// A short, stable name for this date, for remembering which reminders
+    /// have been answered with "I'm Ready" across app launches.
+    var reminderKey: String {
+        guard let data = try? JSONEncoder().encode(persistentModelID) else { return "" }
+        return SHA256.hash(data: data).prefix(8).map { String(format: "%02x", $0) }.joined()
     }
 
     var title: String {

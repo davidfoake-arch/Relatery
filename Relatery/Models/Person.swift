@@ -23,6 +23,9 @@ final class Person {
     /// Only used to spot a contact that's already been added; nothing is kept
     /// in sync.
     var contactIdentifier: String?
+    /// This relationship's own reminders, replacing the everyday ones (see
+    /// `reminderPlan`). Nil to use the everyday ones.
+    var reminderPlanData: Data?
 
     @Relationship(deleteRule: .cascade, inverse: \KeyDate.person)
     var keyDates: [KeyDate] = []
@@ -46,6 +49,11 @@ final class Person {
     var initials: String {
         let letters = [firstName, lastName].compactMap { $0.trimmingCharacters(in: .whitespaces).first }
         return String(letters).uppercased()
+    }
+
+    var reminderPlan: ReminderPlan? {
+        get { ReminderPlan.decode(reminderPlanData) }
+        set { reminderPlanData = ReminderPlan.encode(newValue) }
     }
 
     /// Key dates ordered by which one comes up next.
