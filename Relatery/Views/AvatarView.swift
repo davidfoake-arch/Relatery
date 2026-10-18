@@ -22,7 +22,7 @@ struct AvatarView: View {
                             .font(Theme.Fonts.avatarInitials(size: size * 0.4))
                     }
                 }
-                .foregroundStyle(Theme.cream)
+                .foregroundStyle(Theme.onPlum)
             }
         }
         .frame(width: size, height: size)

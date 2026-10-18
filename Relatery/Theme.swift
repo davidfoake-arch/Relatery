@@ -2,40 +2,60 @@ import SwiftUI
 import UIKit
 
 /// Every colour and font in the app lives here, mirroring Cairnward's
-/// `Theme`. Views refer to `Theme.plum`, `Theme.Fonts.body` and so on —
+/// `Theme`. Views refer to `Theme.accent`, `Theme.Fonts.body` and so on —
 /// never to a hex value, a system colour or a system font — so changing
 /// the look of the app means changing only this file.
 ///
-/// TODO: Dark mode. These are all light-mode colours, so the app is forced
-/// to light appearance by the build setting
-/// `INFOPLIST_KEY_UIUserInterfaceStyle = Light`. It's a build setting
-/// rather than `.preferredColorScheme(.light)` because that modifier also
-/// overrides the navigation bar's own dark scheme, which turns the status
-/// bar black on plum.
+/// Dark mode ("Night plum", the sibling of Cairnward's "Night forest"):
+/// most colours have a light and a dark value, and iOS picks between them
+/// as it draws, following the phone's own setting. There's no in-app
+/// switch, and never `.preferredColorScheme`: it would also override the
+/// navigation bar's own dark scheme and turn the status bar black on plum.
+///
+/// The names describe the light look; read them as roles:
+/// `cream` is the screen background, `warmWhite` a card or row,
+/// `darkBrown` main text, `mutedBrown` secondary text, `stone` dividers.
+/// Plum has three roles that are one colour in light mode but need
+/// different ones at night: `plum` for filled shapes, `accent` for plum
+/// text, icons and tints, and `navigationBar`. Anything drawn *on* a plum
+/// or clay fill uses `onPlum`, which stays cream in both.
 enum Theme {
 
     // MARK: - Core palette
 
-    /// Navigation bars and primary accents. Forms set it as their tint,
-    /// which colours pickers and toggles.
-    static let plum = Color(hex: 0x74465F)
+    /// Filled shapes: avatars, ticked circles, swipe-action buttons. A
+    /// little lighter at night so it stands out from a dark card, while
+    /// cream text on it still reads.
+    static let plum = adaptive(light: 0x74465F, dark: 0x9C5179)
+    /// Plum as text, icons and `.tint` (links, "Add…" buttons, pickers,
+    /// toggles). Pale at night so it reads on a dark card.
+    static let accent = adaptive(light: 0x74465F, dark: 0xC28CA9)
+    /// The navigation bar: the brand plum in both appearances.
+    static let navigationBar = fixed(0x74465F)
     /// Pressed states and depth.
-    static let deepPlum = Color(hex: 0x543245)
-    /// Screen backgrounds; text on plum.
-    static let cream = Color(hex: 0xF3ECDC)
+    static let deepPlum = adaptive(light: 0x543245, dark: 0x5C2E47)
+    /// Screen backgrounds.
+    static let cream = adaptive(light: 0xF3ECDC, dark: 0x1A1116)
     /// Cards, rows and list surfaces.
-    static let warmWhite = Color(hex: 0xFBF8F1)
-    /// Primary text.
-    static let darkBrown = Color(hex: 0x3A2B22)
-    /// Secondary text.
-    static let mutedBrown = Color(hex: 0x6B5748)
-    /// Dividers and placeholders.
-    static let stone = Color(hex: 0xDFD5C3)
-    /// Calls to action, and a date that is today.
-    static let clay = Color(hex: 0xB5653F)
+    static let warmWhite = adaptive(light: 0xFBF8F1, dark: 0x261A21)
+    /// Primary text. The same as Cairnward in both appearances.
+    static let darkBrown = adaptive(light: 0x3A2B22, dark: 0xEDE4D1)
+    /// Secondary text. Plum-tinted at night (Cairnward's is a warm grey).
+    static let mutedBrown = adaptive(light: 0x6B5748, dark: 0xA38E99)
+    /// Dividers. Too faint for anything that has to be seen, like an empty
+    /// circle: use `mutedBrown` for those.
+    static let stone = adaptive(light: 0xDFD5C3, dark: 0x3B2D35)
+    /// Clay as text and icons: a date that is today, a gift that's bought.
+    static let clay = adaptive(light: 0xB5653F, dark: 0xC8774C)
+    /// Clay as a filled button with cream text. The lighter night clay
+    /// would make the text too faint, so this stays the same in both.
+    static let clayFill = fixed(0xB5653F)
+    /// Text and symbols on a plum or clay fill, and the navigation title.
+    static let onPlum = fixed(0xF3ECDC)
     /// Destructive actions. A brick red rather than Cairnward's berry
-    /// (0x8C3A4A), which was too close to plum to stand out.
-    static let berry = Color(hex: 0xB3302B)
+    /// (0x8C3A4A), which was too close to plum to stand out; lifted at
+    /// night, keeping its hue, so it still reads on a dark card.
+    static let berry = adaptive(light: 0xB3302B, dark: 0xD85F5B)
 
     // MARK: - UIKit appearance
 
@@ -149,14 +169,14 @@ extension View {
     func themedNavigationBar(title: String) -> some View {
         navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Theme.plum, for: .navigationBar)
+            .toolbarBackground(Theme.navigationBar, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(title)
                         .font(Theme.Fonts.navigationTitle)
-                        .foregroundStyle(Theme.cream)
+                        .foregroundStyle(Theme.onPlum)
                 }
             }
     }
@@ -171,16 +191,34 @@ extension View {
     }
 }
 
-// MARK: - Hex initialiser
+// MARK: - Building colours
 
-private extension Color {
-    /// `Color(hex: 0x74465F)`. Private to this file, so hex values can't
+private extension Theme {
+    /// A colour with a light and a dark value. iOS asks the closure again
+    /// whenever the appearance changes; SwiftUI asks with the screen's own
+    /// appearance, so the navigation bar (dark) and a card (light, say)
+    /// each get the right one.
+    static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
+
+    /// A colour that's the same in both appearances.
+    static func fixed(_ hex: UInt32) -> Color {
+        Color(uiColor: UIColor(hex: hex))
+    }
+}
+
+private extension UIColor {
+    /// `UIColor(hex: 0x74465F)`. Private to this file, so hex values can't
     /// creep into the views.
-    init(hex: UInt32) {
+    convenience init(hex: UInt32) {
         self.init(
-            red: Double((hex >> 16) & 0xFF) / 255,
-            green: Double((hex >> 8) & 0xFF) / 255,
-            blue: Double(hex & 0xFF) / 255
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
         )
     }
 }

@@ -23,7 +23,7 @@ import SwiftData
             ContentView()
                 // Colours the selected tab. Screens set their own colours
                 // for everything else.
-                .tint(Theme.plum)
+                .tint(Theme.accent)
         }
         .modelContainer(container)
         .backgroundTask(.appRefresh(ReminderScheduler.refreshTaskID)) { [container] in

@@ -46,7 +46,7 @@ enum ReminderAlarms {
             let alert = alertPresentation(title: LocalizedStringResource("\(reminder.title): \(reminder.body)"))
             let attributes = AlarmAttributes<ReminderAlarmMetadata>(
                 presentation: AlarmPresentation(alert: alert),
-                tintColor: Theme.plum
+                tintColor: Theme.navigationBar
             )
             do {
                 _ = try await manager.schedule(id: UUID(), configuration: .alarm(schedule: .fixed(reminder.fireDate), attributes: attributes))
@@ -70,7 +70,7 @@ extension ReminderAlarms {
         } else {
             return AlarmPresentation.Alert(
                 title: title,
-                stopButton: AlarmButton(text: "Stop", textColor: Theme.cream, systemImageName: "stop.circle")
+                stopButton: AlarmButton(text: "Stop", textColor: Theme.onPlum, systemImageName: "stop.circle")
             )
         }
     }

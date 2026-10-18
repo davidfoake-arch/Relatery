@@ -31,7 +31,7 @@ struct ReminderSettingsView: View {
                                 openURL(url)
                             }
                         }
-                        .foregroundStyle(Theme.plum)
+                        .foregroundStyle(Theme.accent)
                     }
                     .themedRows()
                 }
@@ -55,7 +55,7 @@ struct ReminderSettingsView: View {
                     .themedRows()
                 }
             }
-            .tint(Theme.plum)
+            .tint(Theme.accent)
             .themedListBackground()
             .themedNavigationBar(title: "Reminders")
             .toolbar {

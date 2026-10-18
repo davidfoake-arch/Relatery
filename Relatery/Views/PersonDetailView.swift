@@ -32,7 +32,7 @@ struct PersonDetailView: View {
                     Button("Add a Birthday or Special Day", systemImage: "calendar.badge.plus") {
                         isEditing = true
                     }
-                    .foregroundStyle(Theme.plum)
+                    .foregroundStyle(Theme.accent)
                 } else {
                     ForEach(person.upcomingKeyDates) { keyDate in
                         KeyDateRow(keyDate: keyDate)
@@ -49,7 +49,7 @@ struct PersonDetailView: View {
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: hasOwnReminders ? "bell.badge.fill" : "bell")
-                            .foregroundStyle(Theme.plum)
+                            .foregroundStyle(Theme.accent)
                             .frame(width: 28)
                         Text("Reminders")
                         Spacer()
@@ -108,7 +108,7 @@ private struct KeyDateRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: keyDate.kind.symbolName)
-                .foregroundStyle(Theme.plum)
+                .foregroundStyle(Theme.accent)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(keyDate.title)

@@ -44,10 +44,11 @@ struct PeopleListView: View {
                         Button("Add Relationship") { isAddingPerson = true }
                             .font(Theme.Fonts.bodyStrong)
                             .buttonStyle(.borderedProminent)
-                            .tint(Theme.clay)
+                            .tint(Theme.clayFill)
+                            .foregroundStyle(Theme.onPlum)
                         Button("Add from Contacts", action: pickContacts)
                             .font(Theme.Fonts.bodyStrong)
-                            .foregroundStyle(Theme.plum)
+                            .foregroundStyle(Theme.accent)
                     }
                 } else if sections.isEmpty {
                     ContentUnavailableView.search(text: searchText)
@@ -131,7 +132,7 @@ private struct PersonRow: View {
             if let next = person.upcomingKeyDates.first, next.daysUntilNext() <= 30 {
                 Label(next.countdownText, systemImage: next.kind.symbolName)
                     .font(Theme.Fonts.caption)
-                    .foregroundStyle(next.daysUntilNext() == 0 ? Theme.clay : Theme.plum)
+                    .foregroundStyle(next.daysUntilNext() == 0 ? Theme.clay : Theme.accent)
             }
         }
     }

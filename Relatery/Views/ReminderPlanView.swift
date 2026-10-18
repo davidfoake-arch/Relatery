@@ -16,7 +16,7 @@ struct ReminderPlanView: View {
                         isShowingSettings = true
                     }
                     .font(Theme.Fonts.secondary)
-                    .foregroundStyle(Theme.plum)
+                    .foregroundStyle(Theme.accent)
                 }
                 .themedRows()
             }
@@ -36,7 +36,7 @@ struct ReminderPlanView: View {
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: keyDate.kind.symbolName)
-                                    .foregroundStyle(Theme.plum)
+                                    .foregroundStyle(Theme.accent)
                                     .frame(width: 24)
                                 Text(keyDate.title)
                                 Spacer()
@@ -56,7 +56,7 @@ struct ReminderPlanView: View {
                 .themedRows()
             }
         }
-        .tint(Theme.plum)
+        .tint(Theme.accent)
         .themedListBackground()
         .themedNavigationBar(title: "Reminders")
         .sheet(isPresented: $isShowingSettings) {
@@ -85,7 +85,7 @@ private struct KeyDateRemindersView: View {
                 inheritedRules: person.reminderPlan?.rules ?? ReminderSettings.stored().defaultRules
             )
         }
-        .tint(Theme.plum)
+        .tint(Theme.accent)
         .themedListBackground()
         .themedNavigationBar(title: keyDate.title)
     }
@@ -139,7 +139,7 @@ private struct ReminderPlanSections: View {
                 Button("Add Reminder", systemImage: "plus.circle.fill") {
                     editing = ReminderRule(daysBefore: 1, minutesAfterMidnight: ReminderSettings.stored().minutesAfterMidnight)
                 }
-                .foregroundStyle(Theme.plum)
+                .foregroundStyle(Theme.accent)
             } header: {
                 Text("Reminders").themedSectionLabel()
             } footer: {
@@ -149,7 +149,7 @@ private struct ReminderPlanSections: View {
                         Button("Open Settings") {
                             if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                         }
-                        .foregroundStyle(Theme.plum)
+                        .foregroundStyle(Theme.accent)
                     }
                     .font(Theme.Fonts.footnote)
                     .foregroundStyle(Theme.mutedBrown)
@@ -168,7 +168,7 @@ private struct ReminderPlanSections: View {
                         isConfirmingPreset = true
                     }
                 }
-                .foregroundStyle(Theme.plum)
+                .foregroundStyle(Theme.accent)
                 .confirmationDialog("Replace these reminders?", isPresented: $isConfirmingPreset, titleVisibility: .visible) {
                     Button("Replace", role: .destructive, action: applyPreset)
                 } message: {
@@ -221,7 +221,7 @@ private struct ReminderRuleRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: rule.loudness.symbolName)
-                .foregroundStyle(rule.loudness == .normal ? Theme.plum : Theme.clay)
+                .foregroundStyle(rule.loudness == .normal ? Theme.accent : Theme.clay)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(rule.whenLabel), \(rule.timeLabel)")
@@ -232,7 +232,7 @@ private struct ReminderRuleRow: View {
             Spacer()
             Image(systemName: "chevron.right")
                 .font(Theme.Fonts.caption)
-                .foregroundStyle(Theme.stone)
+                .foregroundStyle(Theme.mutedBrown)
         }
         .contentShape(Rectangle())
     }

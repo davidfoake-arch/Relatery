@@ -44,7 +44,7 @@ struct NoteEditor: View {
                     .themedRows()
                 }
             }
-            .tint(Theme.plum)
+            .tint(Theme.accent)
             .themedListBackground()
             .themedNavigationBar(title: note == nil ? "New Note" : "Edit Note")
             .toolbar {

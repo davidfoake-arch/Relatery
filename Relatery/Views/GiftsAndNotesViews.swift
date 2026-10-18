@@ -48,14 +48,14 @@ struct GiftsAndNotesSections: View {
                 }
             }
             Button("Add Gift Idea", systemImage: "plus.circle.fill") { sheet = .newGift }
-                .foregroundStyle(Theme.plum)
+                .foregroundStyle(Theme.accent)
             if !person.givenGifts.isEmpty {
                 NavigationLink {
                     GivenGiftsView(person: person, sheet: $sheet)
                 } label: {
                     HStack {
                         Label("Given", systemImage: GiftStatus.given.symbolName)
-                            .foregroundStyle(Theme.plum)
+                            .foregroundStyle(Theme.accent)
                         Spacer()
                         Text("\(person.givenGifts.count)")
                             .font(Theme.Fonts.secondary)
@@ -82,14 +82,14 @@ struct GiftsAndNotesSections: View {
                 .foregroundStyle(Theme.darkBrown)
             }
             Button("Add Note", systemImage: "square.and.pencil") { sheet = .newNote }
-                .foregroundStyle(Theme.plum)
+                .foregroundStyle(Theme.accent)
             if person.noteEntries.count > notePreviewCount {
                 NavigationLink {
                     AllNotesView(person: person, sheet: $sheet)
                 } label: {
                     HStack {
                         Text("All Notes")
-                            .foregroundStyle(Theme.plum)
+                            .foregroundStyle(Theme.accent)
                         Spacer()
                         Text("\(person.noteEntries.count)")
                             .font(Theme.Fonts.secondary)
@@ -116,7 +116,7 @@ struct GiftsAndNotesSections: View {
             gift.status = .given
             gift.givenOn = .now
         }
-        .tint(Theme.clay)
+        .tint(Theme.clayFill)
     }
 }
 
@@ -127,7 +127,7 @@ struct GiftRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: gift.status.symbolName)
-                .foregroundStyle(gift.status == .bought ? Theme.clay : Theme.plum)
+                .foregroundStyle(gift.status == .bought ? Theme.clay : Theme.accent)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(gift.title)
@@ -148,7 +148,7 @@ struct GiftRow: View {
                     openURL(url)
                 } label: {
                     Image(systemName: "link")
-                        .foregroundStyle(Theme.plum)
+                        .foregroundStyle(Theme.accent)
                         .padding(6)
                 }
                 .buttonStyle(.borderless)

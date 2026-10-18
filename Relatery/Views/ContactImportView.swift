@@ -76,8 +76,8 @@ struct ContactImportView: View {
                 .padding(.vertical, 6)
         }
         .buttonStyle(.borderedProminent)
-        .tint(Theme.clay)
-        .foregroundStyle(Theme.cream)
+        .tint(Theme.clayFill)
+        .foregroundStyle(Theme.onPlum)
         .disabled(count == 0)
         .padding(.horizontal, 20)
         .padding(.bottom, 8)
@@ -157,9 +157,12 @@ private struct ContactImportRow: View {
                 isIncluded.toggle()
             } label: {
                 HStack(spacing: 12) {
+                    // Two colours, so the tick is cream rather than a hole
+                    // showing the (dark, at night) row through it.
                     Image(systemName: isIncluded ? "checkmark.circle.fill" : "circle")
                         .font(Theme.Fonts.cardHeading)
-                        .foregroundStyle(isIncluded ? Theme.plum : Theme.stone)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(isIncluded ? Theme.onPlum : Theme.mutedBrown, isIncluded ? Theme.plum : Theme.mutedBrown)
                     AvatarView(photoData: card.photoData, initials: card.initials)
                         .opacity(isIncluded ? 1 : 0.5)
                 }
@@ -214,7 +217,7 @@ private struct ContactImportRow: View {
                     .font(Theme.Fonts.caption)
             }
             .font(Theme.Fonts.secondary)
-            .foregroundStyle(Theme.plum)
+            .foregroundStyle(Theme.accent)
         }
         .disabled(!isIncluded)
         .accessibilityLabel("Relationship type, \(type.isEmpty ? "none" : type)")

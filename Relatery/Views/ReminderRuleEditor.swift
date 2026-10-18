@@ -34,7 +34,7 @@ struct ReminderRuleEditor: View {
                         ForEach(ReminderLoudness.allCases) { loudness in
                             HStack(spacing: 12) {
                                 Image(systemName: loudness.symbolName)
-                                    .foregroundStyle(Theme.plum)
+                                    .foregroundStyle(Theme.accent)
                                     .frame(width: 24)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(loudness.title)
@@ -57,7 +57,7 @@ struct ReminderRuleEditor: View {
                             Button("Open Settings") {
                                 if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                             }
-                            .foregroundStyle(Theme.plum)
+                            .foregroundStyle(Theme.accent)
                         }
                         .font(Theme.Fonts.footnote)
                         .foregroundStyle(Theme.mutedBrown)
@@ -76,7 +76,7 @@ struct ReminderRuleEditor: View {
                     .themedRows()
                 }
             }
-            .tint(Theme.plum)
+            .tint(Theme.accent)
             .themedListBackground()
             .themedNavigationBar(title: isNew ? "New Reminder" : "Edit Reminder")
             .toolbar {

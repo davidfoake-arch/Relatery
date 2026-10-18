@@ -18,7 +18,7 @@ struct UpcomingView: View {
                             Label("Turn on reminders so you don’t miss a date", systemImage: "bell.badge")
                                 .font(Theme.Fonts.secondary)
                         }
-                        .foregroundStyle(Theme.plum)
+                        .foregroundStyle(Theme.accent)
                     }
                     .themedRows()
                 }
@@ -62,7 +62,7 @@ struct UpcomingView: View {
                         isShowingReminderSettings = true
                     }
                     // Without this the app-wide plum tint shows through as pink.
-                    .tint(Theme.cream)
+                    .tint(Theme.onPlum)
                 }
             }
             .sheet(isPresented: $isShowingReminderSettings) {

@@ -75,7 +75,7 @@ struct GiftIdeaEditor: View {
                     .themedRows()
                 }
             }
-            .tint(Theme.plum)
+            .tint(Theme.accent)
             .themedListBackground()
             .scrollDismissesKeyboard(.interactively)
             .themedNavigationBar(title: gift == nil ? "New Gift Idea" : "Edit Gift Idea")

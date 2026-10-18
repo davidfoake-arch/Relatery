@@ -61,7 +61,7 @@ struct PersonEditorView: View {
                                 matching: .images,
                                 preferredItemEncoding: .current
                             )
-                            .foregroundStyle(Theme.plum)
+                            .foregroundStyle(Theme.accent)
                             if photoData != nil {
                                 Button("Remove", role: .destructive) {
                                     photoData = nil
@@ -84,7 +84,7 @@ struct PersonEditorView: View {
                         .textContentType(.familyName)
                     Button(action: fillFromContacts) {
                         Label("Fill from Contacts", systemImage: "person.crop.circle")
-                            .foregroundStyle(Theme.plum)
+                            .foregroundStyle(Theme.accent)
                     }
                 }
                 .textInputAutocapitalization(.words)
@@ -139,14 +139,14 @@ struct PersonEditorView: View {
                         }
                     } label: {
                         Label("Add Date", systemImage: "plus.circle.fill")
-                            .foregroundStyle(Theme.plum)
+                            .foregroundStyle(Theme.accent)
                     }
                 }
                 .themedRows()
             }
             // Pickers and the date picker take their colour from the tint.
             // Set here, on the form, so it doesn't reach the navigation bar.
-            .tint(Theme.plum)
+            .tint(Theme.accent)
             .themedListBackground()
             .scrollDismissesKeyboard(.interactively)
             .themedNavigationBar(title: person == nil ? "New Relationship" : "Edit Relationship")
@@ -418,7 +418,7 @@ private struct KeyDateEditor: View {
                     Image(systemName: "chevron.up.chevron.down")
                         .font(Theme.Fonts.footnote)
                 }
-                .foregroundStyle(Theme.plum)
+                .foregroundStyle(Theme.accent)
             }
         }
         .accessibilityLabel("Type, \(draft.kind.title)")
@@ -456,7 +456,7 @@ private struct KeyDateEditor: View {
             }
         }
         Toggle(isBirthday ? "Include Year of Birth" : "Include Year", isOn: $draft.includesYear)
-            .tint(Theme.plum)
+            .tint(Theme.accent)
             .onChange(of: draft.includesYear) {
                 startBirthYearAtAdult()
                 draft.day = min(draft.day, draft.daysInMonth)
