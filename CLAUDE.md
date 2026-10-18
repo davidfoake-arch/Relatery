@@ -3,7 +3,7 @@
 An iPhone app for looking after your relationships: a profile for each
 person, their key dates, and reminders before those dates.
 
-SwiftUI + SwiftData, iPhone only, light appearance only. Targets iOS 26:
+SwiftUI + SwiftData, iPhone only, light and dark appearance. Targets iOS 26:
 the phones it runs on are on iOS 26, and Xcode won't offer a phone older
 than the target, so check them before raising it. Everything is
 stored on the device; there is no account, server or sync.
@@ -44,6 +44,47 @@ calls `themedNavigationBar(title:)`, `themedListBackground()` and
 
 Cairnward is a separate project. Read it for reference; don't change it.
 
+### Dark mode ("Night plum")
+
+Dark mode, stage 1: the sibling of Cairnward's "Night forest", with plum in
+place of forest. Each `Theme` colour has a light and a dark value, built by
+`adaptive(light:dark:)` in `Theme.swift`; iOS picks one as it draws.
+
+| Role (`Theme` name) | Light | Dark |
+|---|---|---|
+| `plum` — filled shapes (avatars, ticked circles, swipe buttons) | `#74465F` | `#9C5179` |
+| `accent` — plum as text, icons, `.tint` | `#74465F` | `#C28CA9` |
+| `navigationBar` | `#74465F` | same |
+| `deepPlum` | `#543245` | `#5C2E47` |
+| `cream` — screen background | `#F3ECDC` | `#1A1116` |
+| `warmWhite` — cards, rows | `#FBF8F1` | `#261A21` |
+| `darkBrown` — main text (same as Cairnward) | `#3A2B22` | `#EDE4D1` |
+| `mutedBrown` — secondary text (plum-tinted) | `#6B5748` | `#A38E99` |
+| `stone` — dividers only | `#DFD5C3` | `#3B2D35` |
+| `clay` — clay as text and icons | `#B5653F` | `#C8774C` |
+| `clayFill` — clay buttons with cream text | `#B5653F` | same |
+| `onPlum` — text and symbols on a plum or clay fill | `#F3ECDC` | same |
+| `berry` — destructive (brick red, lifted at night) | `#B3302B` | `#D85F5B` |
+
+Rules:
+- Plum as text, an icon or a `.tint` is `accent`; plum as a filled shape
+  (including a swipe action's `.tint`) is `plum`; the bar is
+  `navigationBar`. Anything on a plum or clay fill uses `onPlum`, never the
+  adaptive `cream`, which goes dark at night.
+- The app follows the phone's setting. No in-app switch, and never
+  `.preferredColorScheme`: it overrides the bar's dark scheme and turns the
+  status bar black on plum.
+- A `*.fill` symbol on a coloured shape (the ticked circle in Add from
+  Contacts) is drawn with `.symbolRenderingMode(.palette)`, so its tick is
+  cream rather than a hole showing the row through it.
+- Anything that has to be seen, like an empty circle, uses `mutedBrown`,
+  not `stone`.
+- Relatery's own calls, beyond Cairnward's recipe: the red is lifted at
+  night to keep 4.5 : 1 on a card; clay buttons keep the light clay so
+  their cream text stays readable; the launch background has a dark
+  variant (`LaunchBackground` colour asset). The app has no shared
+  pictures yet; if it gets any, render them light.
+
 ## Reminders
 
 Which reminders a date gets: its own `ReminderPlan` if it has one, else its
@@ -68,6 +109,25 @@ loudness, and whether it keeps reminding.
   refresh roughly twice a day (`BGTaskSchedulerPermittedIdentifiers`).
 - In the Simulator, AlarmKit refuses permission without showing its prompt
   and background refresh doesn't run; both need a real device to test.
+
+## Where we are (18 October 2026)
+
+Working and tested on David's phone:
+
+- Relationships with photos, types (including Pet) and key dates.
+- Selective import from Contacts (pick, review, confirm), and "Fill from
+  Contacts" in the editor.
+- Reminders: everyday settings for everyone, custom plans per person and
+  per date, the "Important" set, alarms, and "keep reminding" with
+  I'm Ready / Remind Me in 1 Hour.
+- Gift ideas (idea → bought → given, with a Given history) and dated notes
+  on each profile.
+- Dark mode ("Night plum"), matching Cairnward.
+
+Waiting on the paid developer account: Time Sensitive reminders currently
+arrive as ordinary notifications, which includes most of the "Important"
+set (see item 0 below). Until then, run the app from Xcode at least weekly:
+free-account installs stop opening after 7 days.
 
 ## Next
 
@@ -110,7 +170,5 @@ Smaller things noticed along the way:
 - Alarms have no snooze: AlarmKit's Repeat button needs a widget extension
   for its countdown. Adding one would allow "Snooze 10 minutes".
 - Reminders can't carry a note yet ("Book dinner" two weeks ahead).
-- Dark mode: the palette has no dark variants, which is why the app is
-  locked to light.
 - If the GitHub repository is ever made public, check the licences of the
   bundled Fraunces and Karla fonts first.
