@@ -60,8 +60,6 @@ Smaller things noticed along the way:
 
 - Reminder settings apply to every date; no per-person or per-date
   override.
-- The deployment target is still Xcode's default (iOS 17). Raising it
-  would allow newer SwiftUI APIs without `#available` checks.
 - Dark mode: the palette has no dark variants, which is why the app is
   locked to light.
 - If the GitHub repository is ever made public, check the licences of the
