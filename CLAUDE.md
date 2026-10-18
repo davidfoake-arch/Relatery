@@ -13,6 +13,10 @@ stored on the device; there is no account, server or sync.
   named custom day; the year is optional).
 - `Relatery/Views` — the Relationships list, profile, editor, Upcoming and
   reminder settings.
+- `Relatery/Contacts` — `ContactPicker` (Apple's picker; no Contacts
+  permission, the app only receives the people picked) and `ContactCard`,
+  a one-off snapshot of a picked contact. Imported people keep
+  `Person.contactIdentifier` so they aren't added twice; nothing syncs.
 - `Relatery/Reminders` — `ReminderPlanner` decides which notifications
   should be waiting (pure logic, no iOS calls); `ReminderScheduler` hands
   them to iOS; `ReminderSettings` is the user's preferences.
@@ -45,19 +49,20 @@ a time of day.
 
 Roughly in order of value:
 
-1. **Import from Contacts** — pull in names, photos and birthdays so the
-   app doesn't have to be filled in by hand.
-2. **Gift ideas and notes per person**, beyond the single notes field.
-3. **"Last caught up" log**, with nudges for people not spoken to in a
+1. **Gift ideas and notes per person**, beyond the single notes field.
+2. **"Last caught up" log**, with nudges for people not spoken to in a
    while.
-4. **Backup or sync** — data lives only on the phone. Cairnward's backup
+3. **Backup or sync** — data lives only on the phone. Cairnward's backup
    system (`Backup.swift`, `AutoBackup.swift`) could be adapted.
-5. **Automated tests** for `KeyDate` and `ReminderPlanner`. Both have only
-   been checked by hand (leap days, year boundaries, future-dated events,
-   heads-ups that have already passed). There is no test target yet.
+4. **Automated tests** for `KeyDate`, `ReminderPlanner` and `ContactCard`.
+   All have only been checked by hand (leap days, year boundaries,
+   future-dated events, heads-ups that have already passed, contacts with
+   no birth year). There is no test target yet.
 
 Smaller things noticed along the way:
 
+- Contacts import is a snapshot. An "Update from Contacts" button per
+  relationship could refresh it without needing Contacts permission.
 - Reminder settings apply to every date; no per-person or per-date
   override.
 - Dark mode: the palette has no dark variants, which is why the app is

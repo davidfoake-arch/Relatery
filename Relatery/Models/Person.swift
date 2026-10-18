@@ -19,6 +19,10 @@ final class Person {
     var notes: String = ""
     @Attribute(.externalStorage) var photoData: Data?
     var createdAt: Date = Date.now
+    /// The Contacts entry this was filled from, if any (`CNContact.identifier`).
+    /// Only used to spot a contact that's already been added; nothing is kept
+    /// in sync.
+    var contactIdentifier: String?
 
     @Relationship(deleteRule: .cascade, inverse: \KeyDate.person)
     var keyDates: [KeyDate] = []

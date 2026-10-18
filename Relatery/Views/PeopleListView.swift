@@ -6,6 +6,7 @@ struct PeopleListView: View {
     @Query(sort: [SortDescriptor(\Person.firstName), SortDescriptor(\Person.lastName)]) private var people: [Person]
     @State private var searchText = ""
     @State private var isAddingPerson = false
+    @State private var contactImport: ContactImport?
 
     var body: some View {
         NavigationStack {
@@ -44,6 +45,9 @@ struct PeopleListView: View {
                             .font(Theme.Fonts.bodyStrong)
                             .buttonStyle(.borderedProminent)
                             .tint(Theme.clay)
+                        Button("Add from Contacts", action: pickContacts)
+                            .font(Theme.Fonts.bodyStrong)
+                            .foregroundStyle(Theme.plum)
                     }
                 } else if sections.isEmpty {
                     ContentUnavailableView.search(text: searchText)
@@ -56,12 +60,28 @@ struct PeopleListView: View {
             .searchable(text: $searchText)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Add Relationship", systemImage: "plus") { isAddingPerson = true }
+                    Menu("Add Relationship", systemImage: "plus") {
+                        Button("New Relationship", systemImage: "square.and.pencil") { isAddingPerson = true }
+                        Button("Add from Contacts", systemImage: "person.crop.circle.badge.plus", action: pickContacts)
+                    }
                 }
             }
             .sheet(isPresented: $isAddingPerson) {
                 PersonEditorView()
             }
+            .sheet(item: $contactImport) { contactImport in
+                ContactImportView(cards: contactImport.cards)
+            }
+        }
+    }
+
+    /// Opens Apple's contact picker, then the review screen for whoever was
+    /// picked. Picking nobody, or cancelling, does nothing.
+    private func pickContacts() {
+        Task {
+            let contacts = await ContactPicker.pickContacts()
+            guard !contacts.isEmpty else { return }
+            contactImport = ContactImport(cards: contacts.map(ContactCard.init))
         }
     }
 
@@ -84,6 +104,12 @@ struct PeopleListView: View {
                 return lhs.letter < rhs.letter
             }
     }
+}
+
+/// One round of picking from Contacts, for the review sheet.
+private struct ContactImport: Identifiable {
+    let id = UUID()
+    let cards: [ContactCard]
 }
 
 private struct PersonRow: View {

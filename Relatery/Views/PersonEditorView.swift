@@ -1,7 +1,6 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
-import ImageIO
 import UniformTypeIdentifiers
 
 /// Creates a new relationship, or edits an existing one. Changes only apply on Save.
@@ -27,6 +26,10 @@ struct PersonEditorView: View {
     @State private var isLoadingPhoto = false
     @State private var photoError: String?
     @State private var keyDates: [KeyDateDraft]
+    /// The contact this was last filled from, if any.
+    @State private var contactIdentifier: String?
+    /// Set when the picked contact is already another relationship.
+    @State private var duplicateContactName: String?
 
     init(person: Person? = nil) {
         self.person = person
@@ -36,6 +39,7 @@ struct PersonEditorView: View {
         _notes = State(initialValue: person?.notes ?? "")
         _photoData = State(initialValue: person?.photoData)
         _keyDates = State(initialValue: (person?.upcomingKeyDates ?? []).map { KeyDateDraft($0) })
+        _contactIdentifier = State(initialValue: person?.contactIdentifier)
     }
 
     var body: some View {
@@ -80,6 +84,10 @@ struct PersonEditorView: View {
                         .textContentType(.givenName)
                     TextField("Last name", text: $lastName)
                         .textContentType(.familyName)
+                    Button(action: fillFromContacts) {
+                        Label("Fill from Contacts", systemImage: "person.crop.circle")
+                            .foregroundStyle(Theme.plum)
+                    }
                 }
                 .textInputAutocapitalization(.words)
                 .themedRows()
@@ -165,6 +173,14 @@ struct PersonEditorView: View {
                 guard let photoItem else { return }
                 Task { await loadPhoto(from: photoItem) }
             }
+            .alert(
+                "Already Added",
+                isPresented: Binding(get: { duplicateContactName != nil }, set: { if !$0 { duplicateContactName = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("\(duplicateContactName ?? "That contact") is already in Relatery.")
+            }
             .alert("Couldn’t Add Photo", isPresented: Binding(get: { photoError != nil }, set: { if !$0 { photoError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -214,6 +230,7 @@ struct PersonEditorView: View {
         target.relationship = chosenType
         target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         target.photoData = photoData
+        target.contactIdentifier = contactIdentifier
 
         // Reconcile key dates so existing ones keep their identity.
         let kept = Set(keyDates.compactMap { $0.source?.persistentModelID })
@@ -233,6 +250,44 @@ struct PersonEditorView: View {
         dismiss()
     }
 
+    /// Lets the user pick one contact and fills the form from it: the name,
+    /// the photo if it has one, and any dates this relationship doesn't have
+    /// yet. Nothing is saved until Save, as with any other edit.
+    private func fillFromContacts() {
+        Task {
+            guard let contact = await ContactPicker.pickContact() else { return }
+            let card = ContactCard(contact)
+            if let other = allPeople.first(where: {
+                $0.contactIdentifier == card.id && $0.persistentModelID != person?.persistentModelID
+            }) {
+                duplicateContactName = other.displayName
+                return
+            }
+            if !(card.firstName + card.lastName).isEmpty {
+                firstName = card.firstName
+                lastName = card.lastName
+            }
+            if let photo = card.photoData {
+                photoData = photo
+                photoItem = nil
+            }
+            for date in card.dates where !hasDate(like: date) {
+                keyDates.append(KeyDateDraft(date))
+            }
+            contactIdentifier = card.id
+        }
+    }
+
+    /// Whether the form already has this date: the same kind, or for custom
+    /// days, the same name and day.
+    private func hasDate(like date: ContactCard.ImportedDate) -> Bool {
+        keyDates.contains { draft in
+            guard draft.kind == date.kind else { return false }
+            guard date.kind.allowsMultiple else { return true }
+            return draft.label == date.label && draft.month == date.month && draft.day == date.day
+        }
+    }
+
     /// Fetches the picked photo and keeps a small copy. A photo stored in
     /// iCloud has to download first, so this can take a moment or fail; either
     /// way the user is told, rather than nothing appearing to happen.
@@ -244,7 +299,7 @@ struct PersonEditorView: View {
                 photoError = "Photos didn’t provide that picture. If it’s stored in iCloud, check your connection and try again."
                 return
             }
-            guard let small = Self.downscaled(picked.data) else {
+            guard let small = ProfilePhoto.downscaled(picked.data) else {
                 photoError = "That picture is in a format Relatery can’t read."
                 return
             }
@@ -252,20 +307,6 @@ struct PersonEditorView: View {
         } catch {
             photoError = "\(error.localizedDescription)\n\nIf the picture is stored in iCloud, check your connection and try again."
         }
-    }
-
-    /// Profile photos are only shown small, so keep the stored image light.
-    /// ImageIO makes the small copy without first decoding the full picture,
-    /// which matters for a 48-megapixel original.
-    private static func downscaled(_ data: Data, maxDimension: CGFloat = 600) -> Data? {
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxDimension,
-        ]
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
-        return UIImage(cgImage: thumbnail).jpegData(compressionQuality: 0.8)
     }
 }
 
@@ -295,6 +336,15 @@ struct KeyDateDraft: Identifiable {
         day = today.day ?? 1
         year = today.year ?? 2000
         includesYear = false
+    }
+
+    init(_ date: ContactCard.ImportedDate) {
+        kind = date.kind
+        label = date.label
+        month = date.month
+        day = date.day
+        year = date.year ?? Calendar.current.component(.year, from: .now)
+        includesYear = date.year != nil
     }
 
     init(_ keyDate: KeyDate) {

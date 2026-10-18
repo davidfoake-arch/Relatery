@@ -70,6 +70,11 @@ final class KeyDate {
     }
 
     var formattedDate: String {
+        Self.formattedDate(month: month, day: day, year: year)
+    }
+
+    /// "12 October", or "12 October 1990" when the year is known.
+    static func formattedDate(month: Int, day: Int, year: Int?) -> String {
         // 2000 is a leap year, so Feb 29 survives when the year is unknown.
         let components = DateComponents(year: year ?? 2000, month: month, day: day)
         guard let date = Calendar.current.date(from: components) else { return "" }
