@@ -15,6 +15,7 @@ import SwiftData
         } catch {
             fatalError("Couldn't open the data store: \(error)")
         }
+        LegacyNotes.migrate(in: container.mainContext)
     }
 
     var body: some Scene {

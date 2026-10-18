@@ -12,7 +12,10 @@ stored on the device; there is no account, server or sync.
 
 - `Relatery/Models` — `Person` (called a "Relationship" in the interface)
   and `KeyDate` (birthday, wedding anniversary, dating anniversary, or a
-  named custom day; the year is optional).
+  named custom day; the year is optional), plus `GiftIdea` (idea → bought →
+  given, kept as a history) and `NoteEntry` (dated notes). The old single
+  `Person.notes` field is only read by `LegacyNotes`, which turns it into a
+  first dated note at launch.
 - `Relatery/Views` — the Relationships list, profile, editor, Upcoming and
   reminder settings.
 - `Relatery/Contacts` — `ContactPicker` (Apple's picker; no Contacts
@@ -83,12 +86,19 @@ Roughly in order of value:
      Focus. The code already sets `interruptionLevel`; nothing else changes.
    - The paid account also lifts the free account's 7-day limit on apps
      installed from Xcode.
-1. **Gift ideas and notes per person**, beyond the single notes field.
-2. **"Last caught up" log**, with nudges for people not spoken to in a
+1. **Capture from anywhere** — a Share option (messages, screenshots,
+   links) and a Siri / Shortcuts action to add a note or gift idea for
+   someone, without opening the app.
+2. **Gift suggestions** — on phones with Apple Intelligence, Apple's
+   on-device model (FoundationModels) reads a person's notes and suggests
+   ideas for the next date, showing which note each came from. Not
+   available on an iPhone 15 Plus. iOS doesn't let apps read Messages, so
+   texts only get in through the Share option above.
+3. **"Last caught up" log**, with nudges for people not spoken to in a
    while.
-3. **Backup or sync** — data lives only on the phone. Cairnward's backup
+4. **Backup or sync** — data lives only on the phone. Cairnward's backup
    system (`Backup.swift`, `AutoBackup.swift`) could be adapted.
-4. **Automated tests** for `KeyDate`, `ReminderPlanner` and `ContactCard`.
+5. **Automated tests** for `KeyDate`, `ReminderPlanner` and `ContactCard`.
    All have only been checked by hand (leap days, year boundaries,
    future-dated events, heads-ups that have already passed, contacts with
    no birth year). There is no test target yet.

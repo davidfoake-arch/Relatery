@@ -16,6 +16,8 @@ final class Person {
     /// The type of relationship: one of `RelationshipType.presets`, a custom
     /// type the user typed, or empty for none.
     var relationship: String = ""
+    /// The old single notes field, kept only so `LegacyNotes` can move its
+    /// text into a dated note. Always empty after that.
     var notes: String = ""
     @Attribute(.externalStorage) var photoData: Data?
     var createdAt: Date = Date.now
@@ -30,11 +32,16 @@ final class Person {
     @Relationship(deleteRule: .cascade, inverse: \KeyDate.person)
     var keyDates: [KeyDate] = []
 
-    init(firstName: String = "", lastName: String = "", relationship: String = "", notes: String = "", photoData: Data? = nil) {
+    @Relationship(deleteRule: .cascade, inverse: \GiftIdea.person)
+    var giftIdeas: [GiftIdea] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \NoteEntry.person)
+    var noteEntries: [NoteEntry] = []
+
+    init(firstName: String = "", lastName: String = "", relationship: String = "", photoData: Data? = nil) {
         self.firstName = firstName
         self.lastName = lastName
         self.relationship = relationship
-        self.notes = notes
         self.photoData = photoData
     }
 
@@ -54,6 +61,26 @@ final class Person {
     var reminderPlan: ReminderPlan? {
         get { ReminderPlan.decode(reminderPlanData) }
         set { reminderPlanData = ReminderPlan.encode(newValue) }
+    }
+
+    /// Ideas still to buy or give: bought first (they need giving), then
+    /// the newest ideas.
+    var openGiftIdeas: [GiftIdea] {
+        giftIdeas
+            .filter { $0.status != .given }
+            .sorted { ($0.status == .bought ? 0 : 1, $1.createdAt) < ($1.status == .bought ? 0 : 1, $0.createdAt) }
+    }
+
+    /// Gifts already given, most recent first.
+    var givenGifts: [GiftIdea] {
+        giftIdeas
+            .filter { $0.status == .given }
+            .sorted { ($0.givenOn ?? $0.createdAt) > ($1.givenOn ?? $1.createdAt) }
+    }
+
+    /// Notes, newest first.
+    var sortedNotes: [NoteEntry] {
+        noteEntries.sorted { $0.date > $1.date }
     }
 
     /// Key dates ordered by which one comes up next.

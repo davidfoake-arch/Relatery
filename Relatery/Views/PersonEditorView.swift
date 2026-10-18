@@ -20,7 +20,6 @@ struct PersonEditorView: View {
     /// A relationship type, `customTypeTag`, or empty for none.
     @State private var typeChoice: String
     @State private var customType = ""
-    @State private var notes: String
     @State private var photoData: Data?
     @State private var photoItem: PhotosPickerItem?
     @State private var isLoadingPhoto = false
@@ -36,7 +35,6 @@ struct PersonEditorView: View {
         _firstName = State(initialValue: person?.firstName ?? "")
         _lastName = State(initialValue: person?.lastName ?? "")
         _typeChoice = State(initialValue: person?.relationship ?? "")
-        _notes = State(initialValue: person?.notes ?? "")
         _photoData = State(initialValue: person?.photoData)
         _keyDates = State(initialValue: (person?.upcomingKeyDates ?? []).map { KeyDateDraft($0) })
         _contactIdentifier = State(initialValue: person?.contactIdentifier)
@@ -145,14 +143,6 @@ struct PersonEditorView: View {
                     }
                 }
                 .themedRows()
-
-                Section {
-                    TextField("Gift ideas, favorite things, how you met…", text: $notes, axis: .vertical)
-                        .lineLimit(3...8)
-                } header: {
-                    Text("Notes").themedSectionLabel()
-                }
-                .themedRows()
             }
             // Pickers and the date picker take their colour from the tint.
             // Set here, on the form, so it doesn't reach the navigation bar.
@@ -228,7 +218,6 @@ struct PersonEditorView: View {
         target.firstName = firstName.trimmingCharacters(in: .whitespaces)
         target.lastName = lastName.trimmingCharacters(in: .whitespaces)
         target.relationship = chosenType
-        target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         target.photoData = photoData
         target.contactIdentifier = contactIdentifier
 

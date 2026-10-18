@@ -7,6 +7,7 @@ struct PersonDetailView: View {
     let person: Person
     @State private var isEditing = false
     @State private var isConfirmingDelete = false
+    @State private var sheet: ProfileSheet?
 
     var body: some View {
         List {
@@ -60,14 +61,7 @@ struct PersonDetailView: View {
             }
             .themedRows()
 
-            if !person.notes.isEmpty {
-                Section {
-                    Text(person.notes)
-                } header: {
-                    Text("Notes").themedSectionLabel()
-                }
-                .themedRows()
-            }
+            GiftsAndNotesSections(person: person, sheet: $sheet)
 
             Section {
                 // The dialog is attached to the button that opens it: it is
@@ -96,6 +90,9 @@ struct PersonDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             PersonEditorView(person: person)
+        }
+        .sheet(item: $sheet) { sheet in
+            sheet.view(for: person)
         }
     }
 

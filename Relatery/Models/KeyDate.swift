@@ -56,6 +56,10 @@ final class KeyDate {
     var day: Int = 1
     var year: Int?
     var person: Person?
+    /// Gifts meant for this date. Removing the date leaves the gifts,
+    /// without an occasion.
+    @Relationship(deleteRule: .nullify, inverse: \GiftIdea.occasion)
+    var giftIdeas: [GiftIdea] = []
     /// This date's own reminders, replacing its relationship's. Nil to use
     /// the relationship's (see `reminderPlan`).
     var reminderPlanData: Data?
